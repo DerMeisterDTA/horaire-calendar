@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horaire → Google Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --accent: #4ade80;
+    --accent2: #818cf8;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --danger: #f87171;
+    --google-blue: #4285f4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74,222,128,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,222,128,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(74,222,128,0.25);
+    padding: 4px 10px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 36px;
+    position: relative;
+  }
+
+  .steps::after {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  .step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .step.active .step-num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d0f14;
+    font-weight: 500;
+  }
+
+  .step.done .step-num {
+    background: rgba(74,222,128,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .step-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .step.active .step-label { color: var(--accent); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+    margin-bottom: 20px;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: rgba(74,222,128,0.2); }
+
+  .card-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(74,222,128,0.04) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(74,222,128,0.03);
+  }
+
+  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .upload-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .upload-text strong { color: var(--text); }
+
+  #fileInput { display: none; }
+
+  /* Preview */
+  .preview-wrap {
+    display: none;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .preview-wrap.show { display: flex; }
+
+  .preview-img {
+    width: 140px;
+    min-width: 140px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .preview-info { flex: 1; }
+
+  .preview-name {
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 6px;
+    word-break: break-all;
+  }
+
+  .preview-size {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .btn-change {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .btn-change:hover {
+    border-color: var(--text);
+    color: var(--text);
+  }
+
+  /* API Key input */
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 12px 44px 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .input-wrap input:focus { border-color: var(--accent2); }
+  .input-wrap input::placeholder { color: var(--muted); }
+
+  .input-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    transition: color 0.2s;
+  }
+
+  .input-toggle:hover { color: var(--text); }
+
+  .input-hint {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  .input-hint a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+
+  .input-hint a:hover { text-decoration: underline; }
+
+  /* Analyze button */
+  .btn-analyze {
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--accent);
+    border: none;
+    color: #0d0f14;
+    padding: 16px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-weight: 500;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-analyze::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-100%);
+    transition: transform 0.4s;
+  }
+
+  .btn-analyze:hover::before { transform: translateX(0); }
+  .btn-analyze:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-analyze:disabled::before { display: none; }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 32px;
+  }
+
+  .loading.show { display: block; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .loading-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    opacity: 0.6;
+  }
+
+  /* Results */
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .results-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  .results-count {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: rgba(74,222,128,0.1);
+    padding: 3px 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(74,222,128,0.2);
+  }
+
+  /* Event cards */
+  .event-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+  .event-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 3px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .event-item:hover { border-left-color: var(--accent); background: rgba(74,222,128,0.03); }
+  .event-item.selected { border-left-color: var(--accent); background: rgba(74,222,128,0.06); }
+  .event-item.deselected { opacity: 0.4; }
+
+  .event-check {
+    width: 18px; height: 18px;
+    min-width: 18px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--accent);
+    background: rgba(74,222,128,0.1);
+    margin-top: 2px;
+  }
+
+  .event-item.deselected .event-check {
+    background: none;
+    color: transparent;
+  }
+
+  .event-body { flex: 1; }
+
+  .event-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+  }
+
+  .event-name {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .event-date-badge {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(129,140,248,0.15);
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .event-time {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .event-time span { color: var(--text); }
+
+  /* Edit inline */
+  .event-item input[type="text"],
+  .event-item input[type="date"],
+  .event-item input[type="time"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 3px 7px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .event-item input:focus { border-color: var(--accent); }
+
+  .edit-row {
+    display: none;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .event-item.editing .edit-row { display: flex; }
+  .event-item.editing .event-view { display: none; }
+
+  .btn-edit {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .btn-edit:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .btn-save-edit {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(74,222,128,0.15);
+    border: 1px solid rgba(74,222,128,0.3);
+    color: var(--accent);
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  /* Export buttons */
+  .export-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .btn-google {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--google-blue);
+    border: none;
+    color: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .btn-google:hover { background: #3367d6; transform: translateY(-1px); }
+
+  .btn-ics {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .btn-ics:hover { border-color: var(--text); color: var(--text); }
+
+  /* Error */
+  .error-box {
+    display: none;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 3px;
+    padding: 14px 18px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  .error-box.show { display: block; }
+
+  /* Notice */
+  .notice {
+    background: rgba(129,140,248,0.08);
+    border: 1px solid rgba(129,140,248,0.2);
+    border-radius: 3px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--accent2);
+    margin-top: 16px;
+    line-height: 1.7;
+  }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Google logo SVG inline */
+  .g-logo {
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">✦ Outil d'horaire</div>
+    <h1>Photo d'horaire<br>→ <em>Google Calendar</em></h1>
+    <p class="subtitle">Glisse une photo de ton horaire de travail.<br>L'IA extrait tes quarts et les exporte directement dans Google Calendar.</p>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps" id="stepsBar">
+    <div class="step active" id="step1">
+      <div class="step-num">1</div>
+      <div class="step-label">Photo</div>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <div class="step-label">Analyse</div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <div class="step-label">Export</div>
+    </div>
+  </div>
+
+  <!-- API Key -->
+  <div class="card">
+    <div class="card-label">// Clé API Anthropic</div>
+    <div class="input-wrap">
+      <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+      <button class="input-toggle" onclick="toggleKey()">👁</button>
+    </div>
+    <p class="input-hint">
+      Ta clé reste dans ton navigateur — elle n'est jamais envoyée ailleurs.<br>
+      Obtenir une clé → <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
+    </p>
+  </div>
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-label">// Horaire (photo ou capture d'écran)</div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <span class="upload-icon">📅</span>
+      <div class="upload-text">
+        <strong>Clique ou glisse une image ici</strong><br>
+        JPG, PNG, WEBP · Max 10 MB
+      </div>
+    </div>
+
+    <div class="preview-wrap" id="previewWrap">
+      <img class="preview-img" id="previewImg" alt="Aperçu">
+      <div class="preview-info">
+        <div class="preview-name" id="previewName"></div>
+        <div class="preview-size" id="previewSize"></div>
+        <button class="btn-change" onclick="resetUpload()">↩ Changer l'image</button>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <!-- Analyze -->
+  <button class="btn-analyze" id="analyzeBtn" onclick="analyze()" disabled>
+    ⚡ Analyser l'horaire
+  </button>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Loading -->
+  <div class="loading" id="loadingBox">
+    <div class="spinner"></div>
+    <div class="loading-text">Analyse en cours…</div>
+    <div class="loading-sub">Claude lit ton horaire et extrait les quarts</div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsBox">
+    <div class="card">
+      <div class="results-header">
+        <div class="results-title">Quarts détectés</div>
+        <div class="results-count" id="countBadge">0 quarts</div>
+      </div>
+
+      <div class="event-list" id="eventList"></div>
+
+      <div class="divider">exporter vers</div>
+
+      <div class="export-actions">
+        <button class="btn-google" onclick="exportToGoogle()">
+          <svg class="g-logo" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Ajouter à Google Calendar
+        </button>
+        <button class="btn-ics" onclick="downloadICS()">
+          ⬇ Télécharger .ICS
+        </button>
+      </div>
+
+      <div class="notice">
+        💡 <strong>Google Calendar</strong> : chaque quart s'ouvre dans un onglet séparé pour confirmation. Tu peux aussi télécharger le fichier <code>.ics</code> et l'importer manuellement via <em>Paramètres → Importer</em>.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let imageBase64 = null;
+let imageType = null;
+let events = [];
+
+// Drag & drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) return showError("Fichier non supporté. Utilise une image JPG, PNG ou WEBP.");
+  if (file.size > 10 * 1024 * 1024) return showError("Image trop grande (max 10 MB).");
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const result = ev.target.result;
+    imageBase64 = result.split(',')[1];
+    imageType = file.type;
+
+    document.getElementById('previewImg').src = result;
+    document.getElementById('previewName').textContent = file.name;
+    document.getElementById('previewSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('previewWrap').classList.add('show');
+    checkReady();
+    hideError();
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetUpload() {
+  imageBase64 = null;
+  imageType = null;
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('previewWrap').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('resultsBox').classList.remove('show');
+  setStep(1);
+}
+
+document.getElementById('apiKey').addEventListener('input', checkReady);
+
+function checkReady() {
+  const key = document.getElementById('apiKey').value.trim();
+  document.getElementById('analyzeBtn').disabled = !(key && imageBase64);
+}
+
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  });
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+
+async function analyze() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key || !imageBase64) return;
+
+  hideError();
+  setStep(2);
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('loadingBox').classList.add('show');
+  document.getElementById('resultsBox').classList.remove('show');
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const prompt = `Tu es un assistant qui analyse des photos d'horaires de travail.
+
+Examine cette image et extrait TOUS les quarts de travail visibles.
+
+Pour chaque quart, retourne un objet JSON avec:
+- "title": nom du quart ou poste (ex: "Travail", "Shift", ou le nom du poste si visible)
+- "date": date au format YYYY-MM-DD (si l'année n'est pas visible, utilise ${new Date().getFullYear()})
+- "startTime": heure de début au format HH:MM (24h)
+- "endTime": heure de fin au format HH:MM (24h)
+- "notes": informations supplémentaires si présentes (lieu, département, etc.), sinon chaîne vide
+
+Retourne UNIQUEMENT un objet JSON valide avec la structure:
+{
+  "events": [ ... ]
+}
+
+Sans aucun texte avant ou après. Si aucun quart n'est détecté, retourne {"events": []}.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageType, data: imageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `Erreur API: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw = data.content[0].text.trim();
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    events = parsed.events || [];
+
+    if (events.length === 0) {
+      showError("Aucun quart de travail détecté dans cette image. Essaie avec une image plus claire.");
+      document.getElementById('analyzeBtn').disabled = false;
+      setStep(1);
+    } else {
+      renderEvents();
+      setStep(3);
+    }
+  } catch (e) {
+    showError("Erreur : " + e.message);
+    document.getElementById('analyzeBtn').disabled = false;
+    setStep(1);
+  } finally {
+    document.getElementById('loadingBox').classList.remove('show');
+  }
+}
+
+function renderEvents() {
+  const list = document.getElementById('eventList');
+  list.innerHTML = '';
+
+  events.forEach((ev, i) => {
+    ev._selected = true;
+
+    const item = document.createElement('div');
+    item.className = 'event-item selected';
+    item.id = 'ev-' + i;
+
+    const dateObj = new Date(ev.date + 'T12:00:00');
+    const dateStr = dateObj.toLocaleDateString('fr-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    item.innerHTML = `
+      <div class="event-check">✓</div>
+      <div class="event-body">
+        <div class="event-title-row event-view">
+          <span class="event-name">${ev.title}</span>
+          <span class="event-date-badge">${dateStr}</span>
+        </div>
+        <div class="event-time event-view">
+          ⏰ <span>${ev.startTime}</span> → <span>${ev.endTime}</span>
+          ${ev.notes ? `&nbsp;·&nbsp; 📍 ${ev.notes}` : ''}
+        </div>
+        <div class="edit-row">
+          <input type="text" data-field="title" value="${ev.title}" placeholder="Titre">
+          <input type="date" data-field="date" value="${ev.date}">
+          <input type="time" data-field="startTime" value="${ev.startTime}">
+          <input type="time" data-field="endTime" value="${ev.endTime}">
+          <input type="text" data-field="notes" value="${ev.notes}" placeholder="Notes">
+          <button class="btn-save-edit" onclick="saveEdit(${i})">✓ Sauvegarder</button>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          <button class="btn-edit" onclick="toggleEdit(${i})">✎ Modifier</button>
+        </div>
+      </div>
+    `;
+
+    item.querySelector('.event-check').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleSelect(i);
+    });
+
+    list.appendChild(item);
+  });
+
+  document.getElementById('countBadge').textContent = events.length + ' quart' + (events.length > 1 ? 's' : '');
+  document.getElementById('resultsBox').classList.add('show');
+}
+
+function toggleSelect(i) {
+  events[i]._selected = !events[i]._selected;
+  const item = document.getElementById('ev-' + i);
+  item.classList.toggle('selected', events[i]._selected);
+  item.classList.toggle('deselected', !events[i]._selected);
+  item.querySelector('.event-check').textContent = events[i]._selected ? '✓' : '';
+}
+
+function toggleEdit(i) {
+  const item = document.getElementById('ev-' + i);
+  item.classList.toggle('editing');
+}
+
+function saveEdit(i) {
+  const item = document.getElementById('ev-' + i);
+  item.querySelectorAll('[data-field]').forEach(inp => {
+    events[i][inp.dataset.field] = inp.value;
+  });
+  item.classList.remove('editing');
+  renderEvents();
+}
+
+function getSelectedEvents() {
+  return events.filter(e => e._selected);
+}
+
+function exportToGoogle() {
+  const selected = getSelectedEvents();
+  if (!selected.length) return showError("Sélectionne au moins un quart à exporter.");
+  hideError();
+
+  selected.forEach((ev, i) => {
+    setTimeout(() => {
+      const start = ev.date.replace(/-/g, '') + 'T' + ev.startTime.replace(':', '') + '00';
+      const end   = ev.date.replace(/-/g, '') + 'T' + ev.endTime.replace(':', '') + '00';
+      const title = encodeURIComponent(ev.title);
+      const details = encodeURIComponent(ev.notes || 'Exporté depuis Horaire → Google Calendar');
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+      window.open(url, '_blank');
+    }, i * 400);
+  });
+}
+
+function downloadICS() {
+  const selected = getSelectedEvents();
+  if (!selected.length) return showError("Sélectionne au moins un quart à exporter.");
+  hideError();
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Horaire to Calendar//FR',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+  ];
+
+  selected.forEach(ev => {
+    const start = ev.date.replace(/-/g, '') + 'T' + ev.startTime.replace(':', '') + '00';
+    const end   = ev.date.replace(/-/g, '') + 'T' + ev.endTime.replace(':', '') + '00';
+    const now   = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    lines.push(
+      'BEGIN:VEVENT',
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${ev.title}`,
+      `DESCRIPTION:${ev.notes || ''}`,
+      `DTSTAMP:${now}`,
+      `UID:${now}-${Math.random().toString(36).substr(2,9)}@horaire`,
+      'END:VEVENT'
+    );
+  });
+
+  lines.push('END:VCALENDAR');
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'horaire.ics';
+  a.click();
+}
+</script>
+</body>
+</html>
