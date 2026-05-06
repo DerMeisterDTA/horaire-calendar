@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Horaire → Google Calendar</title>
+<title>Calendar M8</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -517,7 +517,7 @@
 <div class="container">
 
   <div class="badge">✦ Outil d'horaire</div>
-  <h1>Photo d'horaire<br>→ <em>Calendrier</em></h1>
+  <h1>Calendar <em>M8</em></h1>
   <p class="subtitle">Prends une photo de ton horaire de travail.<br>L'IA extrait tes quarts et les exporte dans Google Calendar.</p>
 
   <!-- Steps -->
@@ -535,6 +535,7 @@
       <div class="step-label">Export</div>
     </div>
   </div>
+
 
   <!-- API Key -->
   <div class="card">
@@ -558,7 +559,7 @@
       <span class="upload-icon">📅</span>
       <div class="upload-text">
         <strong>Appuie pour choisir une image</strong>
-        JPG, PNG · depuis ta galerie
+        JPG, PNG, HEIC · depuis ta galerie
       </div>
     </div>
 
@@ -579,8 +580,8 @@
       </div>
     </div>
 
-    <input type="file" id="fileInput" accept="image/*">
-    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+    <input type="file" id="fileInput" accept="image/*,.heic,.heif">
+    <input type="file" id="cameraInput" accept="image/*,.heic,.heif" capture="environment">
   </div>
 
   <!-- Analyze -->
@@ -670,36 +671,57 @@ zone.addEventListener('drop', e => {
 });
 
 function handleFile(file) {
-  if (!file.type.startsWith('image/')) return showError("Utilise une image JPG ou PNG.");
+  const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+  if (!file.type.startsWith('image/') && !isHeic) return showError("Utilise une image JPG, PNG ou HEIC.");
   if (file.size > 10 * 1024 * 1024) return showError("Image trop grande (max 10 MB).");
 
   // Compress on mobile if needed
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const result = ev.target.result;
-    const img = new Image();
-    img.onload = () => {
-      // Resize if too large (max 1600px)
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      if (w > 1600) { h = Math.round(h * 1600 / w); w = 1600; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.85);
-      imageBase64 = compressed.split(',')[1];
-      imageType = 'image/jpeg';
-
-      document.getElementById('previewImg').src = compressed;
-      document.getElementById('previewName').textContent = file.name;
-      document.getElementById('uploadZone').style.display = 'none';
-      document.querySelector('.camera-btns').style.display = 'none';
-      document.getElementById('previewWrap').classList.add('show');
-      checkReady();
-      hideError();
+  const processImage = (blob, filename) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target.result;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > 1600) { h = Math.round(h * 1600 / w); w = 1600; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.85);
+        imageBase64 = compressed.split(',')[1];
+        imageType = 'image/jpeg';
+        document.getElementById('previewImg').src = compressed;
+        document.getElementById('previewName').textContent = filename;
+        document.getElementById('uploadZone').style.display = 'none';
+        document.querySelector('.camera-btns').style.display = 'none';
+        document.getElementById('previewWrap').classList.add('show');
+        checkReady();
+        hideError();
+      };
+      img.src = result;
     };
-    img.src = result;
+    reader.readAsDataURL(blob);
   };
-  reader.readAsDataURL(file);
+
+  if (isHeic) {
+    // Load heic2any dynamically
+    if (!window.heic2any) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js';
+      script.onload = () => {
+        heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+          .then(jpegBlob => processImage(jpegBlob, file.name.replace(/\.heic$/i, '.jpg')))
+          .catch(() => showError("Impossible de convertir le fichier HEIC. Essaie de l'envoyer en JPG."));
+      };
+      document.head.appendChild(script);
+    } else {
+      heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+        .then(jpegBlob => processImage(jpegBlob, file.name.replace(/\.heic$/i, '.jpg')))
+        .catch(() => showError("Impossible de convertir le fichier HEIC. Essaie de l'envoyer en JPG."));
+    }
+  } else {
+    processImage(file, file.name);
+  }
 }
 
 function resetUpload() {
@@ -747,23 +769,25 @@ async function analyze() {
 
   const year = new Date().getFullYear();
 
-  const prompt = `Analyse cette image d'un horaire de travail et extrait TOUS les quarts de travail visibles.
+  const prompt = `Analyse cette image d'un horaire de travail et extrait UNIQUEMENT les quarts assignés à "BLOUIN, JESSICA" (ou variantes : Jessica Blouin, J. Blouin, Blouin J.).
 
-Pour chaque quart, retourne un objet JSON avec:
-- "title": nom du quart ou du poste (ex: "Travail", "Quart du matin", ou le nom du poste si visible)
+Ignore complètement tous les autres employés.
+
+Pour chaque quart de BLOUIN, JESSICA, retourne un objet JSON avec:
+- "title": nom du poste si visible, sinon "Travail"
 - "date": date au format YYYY-MM-DD. Si l'année n'est pas visible, utilise ${year}. Si le mois n'est pas visible, utilise le mois actuel.
 - "startTime": heure de début au format HH:MM (24h)
 - "endTime": heure de fin au format HH:MM (24h)
-- "notes": informations supplémentaires si présentes (lieu, département, etc.), sinon chaîne vide
+- "notes": informations supplémentaires si présentes, sinon chaîne vide
 
 Retourne UNIQUEMENT un JSON valide:
 {"events": [...]}
 
-Sans texte avant ou après, sans balises markdown. Si aucun quart détecté: {"events": []}`;
+Sans texte avant ou après, sans balises markdown. Si aucun quart pour BLOUIN, JESSICA: {"events": []}`;
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -909,7 +933,8 @@ function exportToGoogle() {
     setTimeout(() => {
       const start = ev.date.replace(/-/g,'') + 'T' + ev.startTime.replace(':','') + '00';
       const end   = ev.date.replace(/-/g,'') + 'T' + ev.endTime.replace(':','') + '00';
-      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title)}&dates=${start}/${end}&details=${encodeURIComponent(ev.notes || '')}`;
+      const calId = encodeURIComponent("a1507943def2671ae9daaad34512143397f527e22c52a86d2243d3e784d7e3bc@group.calendar.google.com");
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title)}&dates=${start}/${end}&details=${encodeURIComponent(ev.notes || '')}&crm=AVAILABLE&src=${calId}`;
       window.open(url, '_blank');
     }, i * 500);
   });
