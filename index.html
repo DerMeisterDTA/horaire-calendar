@@ -2,7 +2,9 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Horaire → Google Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -19,7 +21,7 @@
     --google-blue: #4285f4;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
     background: var(--bg);
@@ -29,7 +31,6 @@
     overflow-x: hidden;
   }
 
-  /* Grid background */
   body::before {
     content: '';
     position: fixed;
@@ -45,14 +46,9 @@
   .container {
     position: relative;
     z-index: 1;
-    max-width: 780px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 48px 24px 80px;
-  }
-
-  /* Header */
-  .header {
-    margin-bottom: 48px;
+    padding: 36px 18px 100px;
   }
 
   .badge {
@@ -66,7 +62,7 @@
     border: 1px solid rgba(74,222,128,0.25);
     padding: 4px 10px;
     border-radius: 2px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .badge::before {
@@ -77,46 +73,36 @@
     animation: pulse 2s ease-in-out infinite;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   h1 {
     font-family: 'Fraunces', serif;
-    font-size: clamp(32px, 5vw, 48px);
+    font-size: clamp(28px, 7vw, 42px);
     font-weight: 300;
     line-height: 1.1;
-    color: var(--text);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
 
-  h1 em {
-    font-style: italic;
-    color: var(--accent);
-  }
+  h1 em { font-style: italic; color: var(--accent); }
 
   .subtitle {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--muted);
-    letter-spacing: 0.05em;
-    line-height: 1.6;
+    line-height: 1.7;
+    margin-bottom: 32px;
   }
 
   /* Steps */
   .steps {
     display: flex;
-    gap: 0;
-    margin-bottom: 36px;
+    margin-bottom: 28px;
     position: relative;
   }
 
   .steps::after {
     content: '';
     position: absolute;
-    top: 16px;
-    left: 16px;
-    right: 16px;
+    top: 15px; left: 16px; right: 16px;
     height: 1px;
     background: var(--border);
     z-index: 0;
@@ -127,261 +113,186 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     position: relative;
     z-index: 1;
   }
 
   .step-num {
-    width: 32px; height: 32px;
+    width: 30px; height: 30px;
     border-radius: 50%;
     background: var(--surface2);
     border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--muted);
     transition: all 0.3s;
   }
 
-  .step.active .step-num {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #0d0f14;
-    font-weight: 500;
-  }
-
-  .step.done .step-num {
-    background: rgba(74,222,128,0.15);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .step.active .step-num { background: var(--accent); border-color: var(--accent); color: #0d0f14; font-weight: 500; }
+  .step.done .step-num { background: rgba(74,222,128,0.15); border-color: var(--accent); color: var(--accent); }
 
   .step-label {
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-align: center;
+    font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); text-align: center;
   }
 
-  .step.active .step-label { color: var(--accent); }
+  .step.active .step-label, .step.done .step-label { color: var(--accent); }
 
-  /* Cards */
+  /* Card */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 28px;
-    margin-bottom: 20px;
-    transition: border-color 0.3s;
-  }
-
-  .card:hover { border-color: rgba(74,222,128,0.2); }
-
-  .card-label {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
+    border-radius: 6px;
+    padding: 22px 18px;
     margin-bottom: 16px;
   }
 
-  /* Upload zone */
-  .upload-zone {
-    border: 1px dashed var(--border);
-    border-radius: 4px;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .upload-zone::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at center, rgba(74,222,128,0.04) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(74,222,128,0.03);
-  }
-
-  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
-
-  .upload-icon {
-    font-size: 36px;
-    margin-bottom: 12px;
-    display: block;
-  }
-
-  .upload-text {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.8;
-  }
-
-  .upload-text strong { color: var(--text); }
-
-  #fileInput { display: none; }
-
-  /* Preview */
-  .preview-wrap {
-    display: none;
-    gap: 20px;
-    align-items: flex-start;
-  }
-
-  .preview-wrap.show { display: flex; }
-
-  .preview-img {
-    width: 140px;
-    min-width: 140px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 3px;
-    border: 1px solid var(--border);
-  }
-
-  .preview-info { flex: 1; }
-
-  .preview-name {
-    font-size: 12px;
-    color: var(--text);
-    margin-bottom: 6px;
-    word-break: break-all;
-  }
-
-  .preview-size {
-    font-size: 11px;
-    color: var(--muted);
+  .card-label {
+    font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
     margin-bottom: 14px;
   }
 
-  .btn-change {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 5px 12px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.2s;
-  }
-
-  .btn-change:hover {
-    border-color: var(--text);
-    color: var(--text);
-  }
-
-  /* API Key input */
-  .input-wrap {
-    position: relative;
-  }
+  /* API Key */
+  .input-wrap { position: relative; }
 
   .input-wrap input {
     width: 100%;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 12px 44px 12px 14px;
+    border-radius: 4px;
+    padding: 14px 44px 14px 14px;
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text);
     outline: none;
     transition: border-color 0.2s;
-    letter-spacing: 0.05em;
+    -webkit-appearance: none;
   }
 
   .input-wrap input:focus { border-color: var(--accent2); }
   .input-wrap input::placeholder { color: var(--muted); }
 
   .input-toggle {
-    position: absolute;
-    right: 12px;
-    top: 50%;
+    position: absolute; right: 12px; top: 50%;
     transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 14px;
-    padding: 0;
-    transition: color 0.2s;
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 16px; padding: 8px;
   }
-
-  .input-toggle:hover { color: var(--text); }
 
   .input-hint {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 8px;
-    line-height: 1.6;
+    font-size: 10px; color: var(--muted);
+    margin-top: 10px; line-height: 1.7;
   }
 
-  .input-hint a {
-    color: var(--accent2);
-    text-decoration: none;
+  .input-hint a { color: var(--accent2); text-decoration: none; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
   }
 
-  .input-hint a:hover { text-decoration: underline; }
+  .upload-zone:active { transform: scale(0.98); }
+  .upload-zone.drag-over { border-color: var(--accent); background: rgba(74,222,128,0.04); }
+
+  .upload-icon { font-size: 40px; }
+
+  .upload-text { font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .upload-text strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+  /* Camera button */
+  .camera-btns {
+    display: flex; gap: 10px; margin-top: 14px;
+  }
+
+  .btn-camera, .btn-gallery {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    -webkit-appearance: none;
+  }
+
+  .btn-camera { border-color: rgba(74,222,128,0.3); color: var(--accent); }
+  .btn-camera:active, .btn-gallery:active { transform: scale(0.97); }
+
+  #fileInput, #cameraInput { display: none; }
+
+  /* Preview */
+  .preview-wrap { display: none; }
+  .preview-wrap.show { display: block; }
+
+  .preview-img {
+    width: 100%; max-height: 220px;
+    object-fit: cover; border-radius: 4px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .preview-meta {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .preview-name { font-size: 11px; color: var(--muted); }
+
+  .btn-change {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 6px 12px;
+    cursor: pointer; border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .btn-change:active { background: var(--surface2); }
 
   /* Analyze button */
   .btn-analyze {
     width: 100%;
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 0.12em;
+    font-size: 13px; letter-spacing: 0.12em;
     text-transform: uppercase;
     background: var(--accent);
-    border: none;
-    color: #0d0f14;
-    padding: 16px;
-    cursor: pointer;
-    border-radius: 3px;
-    font-weight: 500;
+    border: none; color: #0d0f14;
+    padding: 18px; cursor: pointer;
+    border-radius: 4px; font-weight: 500;
     transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
+    -webkit-appearance: none;
   }
 
-  .btn-analyze::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0.15);
-    transform: translateX(-100%);
-    transition: transform 0.4s;
-  }
-
-  .btn-analyze:hover::before { transform: translateX(0); }
-  .btn-analyze:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  .btn-analyze:disabled::before { display: none; }
+  .btn-analyze:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-analyze:disabled { opacity: 0.35; cursor: not-allowed; }
 
   /* Loading */
-  .loading {
-    display: none;
-    text-align: center;
-    padding: 32px;
-  }
-
+  .loading { display: none; text-align: center; padding: 36px; }
   .loading.show { display: block; }
 
   .spinner {
-    width: 32px; height: 32px;
+    width: 36px; height: 36px;
     border: 2px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
@@ -391,287 +302,226 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .loading-text {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-  }
-
-  .loading-sub {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 6px;
-    opacity: 0.6;
-  }
+  .loading-text { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; }
+  .loading-sub { font-size: 10px; color: var(--muted); margin-top: 6px; opacity: 0.6; }
 
   /* Results */
   .results { display: none; }
   .results.show { display: block; }
 
   .results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 16px;
   }
 
   .results-title {
     font-family: 'Fraunces', serif;
-    font-size: 20px;
-    font-weight: 300;
-    color: var(--text);
+    font-size: 20px; font-weight: 300;
   }
 
   .results-count {
-    font-size: 10px;
-    letter-spacing: 0.1em;
+    font-size: 10px; letter-spacing: 0.1em;
     color: var(--accent);
     background: rgba(74,222,128,0.1);
-    padding: 3px 10px;
-    border-radius: 2px;
+    padding: 3px 10px; border-radius: 2px;
     border: 1px solid rgba(74,222,128,0.2);
   }
 
-  /* Event cards */
   .event-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
   .event-item {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-left: 3px solid var(--accent2);
-    border-radius: 3px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
+    border-radius: 4px;
+    padding: 14px;
     transition: all 0.2s;
-    cursor: pointer;
   }
 
-  .event-item:hover { border-left-color: var(--accent); background: rgba(74,222,128,0.03); }
-  .event-item.selected { border-left-color: var(--accent); background: rgba(74,222,128,0.06); }
+  .event-item.selected { border-left-color: var(--accent); }
   .event-item.deselected { opacity: 0.4; }
 
+  .event-top {
+    display: flex; align-items: flex-start;
+    gap: 10px; margin-bottom: 8px;
+  }
+
   .event-check {
-    width: 18px; height: 18px;
-    min-width: 18px;
+    width: 22px; height: 22px; min-width: 22px;
     border: 1px solid var(--border);
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: var(--accent);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--accent);
     background: rgba(74,222,128,0.1);
-    margin-top: 2px;
+    cursor: pointer;
+    margin-top: 1px;
+    transition: all 0.2s;
   }
 
-  .event-item.deselected .event-check {
-    background: none;
-    color: transparent;
-  }
+  .event-item.deselected .event-check { background: none; color: transparent; }
 
-  .event-body { flex: 1; }
-
-  .event-title-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-    flex-wrap: wrap;
-  }
+  .event-info { flex: 1; }
 
   .event-name {
-    font-size: 13px;
-    color: var(--text);
-    font-weight: 500;
+    font-size: 14px; color: var(--text);
+    font-weight: 500; margin-bottom: 4px;
   }
 
-  .event-date-badge {
-    font-size: 9px;
-    letter-spacing: 0.1em;
+  .event-date {
+    font-size: 10px; letter-spacing: 0.08em;
     text-transform: uppercase;
-    background: rgba(129,140,248,0.15);
-    color: var(--accent2);
-    padding: 2px 8px;
-    border-radius: 2px;
+    color: var(--accent2); margin-bottom: 4px;
   }
 
-  .event-time {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
+  .event-time { font-size: 12px; color: var(--muted); }
   .event-time span { color: var(--text); }
 
-  /* Edit inline */
-  .event-item input[type="text"],
-  .event-item input[type="date"],
-  .event-item input[type="time"] {
+  .event-notes { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Edit form */
+  .edit-form {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .event-item.editing .edit-form { display: flex; }
+  .event-item.editing .event-view { display: none; }
+
+  .edit-form label {
+    font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 4px; display: block;
+  }
+
+  .edit-form input {
+    width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 2px;
+    border-radius: 3px;
     color: var(--text);
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 3px 7px;
+    font-size: 13px;
+    padding: 10px 12px;
     outline: none;
+    -webkit-appearance: none;
     transition: border-color 0.2s;
   }
 
-  .event-item input:focus { border-color: var(--accent); }
+  .edit-form input:focus { border-color: var(--accent); }
 
-  .edit-row {
-    display: none;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
+  .edit-row-times { display: flex; gap: 10px; }
+  .edit-row-times > div { flex: 1; }
 
-  .event-item.editing .edit-row { display: flex; }
-  .event-item.editing .event-view { display: none; }
+  .edit-actions { display: flex; gap: 8px; }
 
-  .btn-edit {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 3px 8px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.2s;
-  }
-
-  .btn-edit:hover { border-color: var(--accent2); color: var(--accent2); }
-
-  .btn-save-edit {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.08em;
+  .btn-save {
+    flex: 1; font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em;
     text-transform: uppercase;
     background: rgba(74,222,128,0.15);
     border: 1px solid rgba(74,222,128,0.3);
-    color: var(--accent);
-    padding: 3px 8px;
-    cursor: pointer;
-    border-radius: 2px;
+    color: var(--accent); padding: 10px;
+    cursor: pointer; border-radius: 3px;
+  }
+
+  .btn-cancel-edit {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 10px 14px;
+    cursor: pointer; border-radius: 3px;
+  }
+
+  .btn-edit-trigger {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 6px 10px;
+    cursor: pointer; border-radius: 2px;
+    margin-top: 8px; transition: all 0.2s;
+  }
+
+  .btn-edit-trigger:active { background: var(--surface2); }
+
+  /* Divider */
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 16px 0; color: var(--muted);
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
   }
 
   /* Export buttons */
-  .export-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .export-actions { display: flex; flex-direction: column; gap: 10px; }
 
   .btn-google {
-    flex: 1;
-    min-width: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: var(--google-blue);
-    border: none;
-    color: white;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--google-blue); border: none; color: white;
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 14px 20px;
-    cursor: pointer;
-    border-radius: 3px;
-    transition: all 0.2s;
-    font-weight: 500;
+    font-size: 12px; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 16px 20px;
+    cursor: pointer; border-radius: 4px;
+    font-weight: 500; transition: all 0.2s;
+    -webkit-appearance: none;
   }
 
-  .btn-google:hover { background: #3367d6; transform: translateY(-1px); }
+  .btn-google:active { transform: scale(0.98); opacity: 0.9; }
 
   .btn-ics {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: none;
-    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: none; border: 1px solid var(--border);
     color: var(--muted);
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 14px 20px;
-    cursor: pointer;
-    border-radius: 3px;
-    transition: all 0.2s;
+    font-size: 12px; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 16px 20px;
+    cursor: pointer; border-radius: 4px;
+    transition: all 0.2s; -webkit-appearance: none;
   }
 
-  .btn-ics:hover { border-color: var(--text); color: var(--text); }
+  .btn-ics:active { background: var(--surface2); }
+
+  /* Notice */
+  .notice {
+    background: rgba(129,140,248,0.08);
+    border: 1px solid rgba(129,140,248,0.2);
+    border-radius: 4px; padding: 12px 14px;
+    font-size: 11px; color: var(--accent2);
+    margin-top: 14px; line-height: 1.7;
+  }
 
   /* Error */
   .error-box {
     display: none;
     background: rgba(248,113,113,0.08);
     border: 1px solid rgba(248,113,113,0.3);
-    border-radius: 3px;
-    padding: 14px 18px;
-    font-size: 12px;
-    color: var(--danger);
-    margin-bottom: 16px;
-    line-height: 1.6;
+    border-radius: 4px; padding: 14px;
+    font-size: 12px; color: var(--danger);
+    margin-bottom: 14px; line-height: 1.6;
   }
 
   .error-box.show { display: block; }
 
-  /* Notice */
-  .notice {
-    background: rgba(129,140,248,0.08);
-    border: 1px solid rgba(129,140,248,0.2);
-    border-radius: 3px;
-    padding: 12px 16px;
-    font-size: 11px;
-    color: var(--accent2);
-    margin-top: 16px;
-    line-height: 1.7;
-  }
-
-  /* Divider */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 8px 0;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Google logo SVG inline */
-  .g-logo {
-    width: 18px; height: 18px;
-    flex-shrink: 0;
-  }
+  .g-logo { width: 18px; height: 18px; flex-shrink: 0; }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="badge">✦ Outil d'horaire</div>
-    <h1>Photo d'horaire<br>→ <em>Google Calendar</em></h1>
-    <p class="subtitle">Glisse une photo de ton horaire de travail.<br>L'IA extrait tes quarts et les exporte directement dans Google Calendar.</p>
-  </div>
+  <div class="badge">✦ Outil d'horaire</div>
+  <h1>Photo d'horaire<br>→ <em>Calendrier</em></h1>
+  <p class="subtitle">Prends une photo de ton horaire de travail.<br>L'IA extrait tes quarts et les exporte dans Google Calendar.</p>
 
   <!-- Steps -->
-  <div class="steps" id="stepsBar">
+  <div class="steps">
     <div class="step active" id="step1">
       <div class="step-num">1</div>
       <div class="step-label">Photo</div>
@@ -688,39 +538,49 @@
 
   <!-- API Key -->
   <div class="card">
-    <div class="card-label">// Clé API Anthropic</div>
+    <div class="card-label">// Clé API Google Gemini (gratuite)</div>
     <div class="input-wrap">
-      <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+      <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off" inputmode="text">
       <button class="input-toggle" onclick="toggleKey()">👁</button>
     </div>
     <p class="input-hint">
-      Ta clé reste dans ton navigateur — elle n'est jamais envoyée ailleurs.<br>
-      Obtenir une clé → <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
+      Gratuit, sans carte de crédit →
+      <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a><br>
+      Ta clé reste dans ton téléphone — jamais partagée.
     </p>
   </div>
 
   <!-- Upload -->
   <div class="card">
-    <div class="card-label">// Horaire (photo ou capture d'écran)</div>
+    <div class="card-label">// Horaire</div>
 
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
       <span class="upload-icon">📅</span>
       <div class="upload-text">
-        <strong>Clique ou glisse une image ici</strong><br>
-        JPG, PNG, WEBP · Max 10 MB
+        <strong>Appuie pour choisir une image</strong>
+        JPG, PNG · depuis ta galerie
       </div>
+    </div>
+
+    <div class="camera-btns">
+      <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">
+        📷 Caméra
+      </button>
+      <button class="btn-gallery" onclick="document.getElementById('fileInput').click()">
+        🖼 Galerie
+      </button>
     </div>
 
     <div class="preview-wrap" id="previewWrap">
       <img class="preview-img" id="previewImg" alt="Aperçu">
-      <div class="preview-info">
+      <div class="preview-meta">
         <div class="preview-name" id="previewName"></div>
-        <div class="preview-size" id="previewSize"></div>
-        <button class="btn-change" onclick="resetUpload()">↩ Changer l'image</button>
+        <button class="btn-change" onclick="resetUpload()">↩ Changer</button>
       </div>
     </div>
 
     <input type="file" id="fileInput" accept="image/*">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment">
   </div>
 
   <!-- Analyze -->
@@ -728,14 +588,13 @@
     ⚡ Analyser l'horaire
   </button>
 
-  <!-- Error -->
   <div class="error-box" id="errorBox"></div>
 
   <!-- Loading -->
   <div class="loading" id="loadingBox">
     <div class="spinner"></div>
     <div class="loading-text">Analyse en cours…</div>
-    <div class="loading-sub">Claude lit ton horaire et extrait les quarts</div>
+    <div class="loading-sub">Gemini lit ton horaire et extrait les quarts</div>
   </div>
 
   <!-- Results -->
@@ -766,7 +625,7 @@
       </div>
 
       <div class="notice">
-        💡 <strong>Google Calendar</strong> : chaque quart s'ouvre dans un onglet séparé pour confirmation. Tu peux aussi télécharger le fichier <code>.ics</code> et l'importer manuellement via <em>Paramètres → Importer</em>.
+        💡 Chaque quart s'ouvre dans Google Calendar pour confirmation avant d'être sauvegardé.
       </div>
     </div>
   </div>
@@ -778,63 +637,86 @@ let imageBase64 = null;
 let imageType = null;
 let events = [];
 
-// Drag & drop
+// Persist API key
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('gemini_key');
+  if (saved) document.getElementById('apiKey').value = saved;
+  checkReady();
+});
+
+document.getElementById('apiKey').addEventListener('input', () => {
+  localStorage.setItem('gemini_key', document.getElementById('apiKey').value.trim());
+  checkReady();
+});
+
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// File handling
+['fileInput', 'cameraInput'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+});
+
 const zone = document.getElementById('uploadZone');
 zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => {
-  e.preventDefault();
-  zone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
-});
-
-document.getElementById('fileInput').addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
+  e.preventDefault(); zone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
 });
 
 function handleFile(file) {
-  if (!file.type.startsWith('image/')) return showError("Fichier non supporté. Utilise une image JPG, PNG ou WEBP.");
+  if (!file.type.startsWith('image/')) return showError("Utilise une image JPG ou PNG.");
   if (file.size > 10 * 1024 * 1024) return showError("Image trop grande (max 10 MB).");
 
+  // Compress on mobile if needed
   const reader = new FileReader();
   reader.onload = ev => {
     const result = ev.target.result;
-    imageBase64 = result.split(',')[1];
-    imageType = file.type;
+    const img = new Image();
+    img.onload = () => {
+      // Resize if too large (max 1600px)
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > 1600) { h = Math.round(h * 1600 / w); w = 1600; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.85);
+      imageBase64 = compressed.split(',')[1];
+      imageType = 'image/jpeg';
 
-    document.getElementById('previewImg').src = result;
-    document.getElementById('previewName').textContent = file.name;
-    document.getElementById('previewSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
-    document.getElementById('uploadZone').style.display = 'none';
-    document.getElementById('previewWrap').classList.add('show');
-    checkReady();
-    hideError();
+      document.getElementById('previewImg').src = compressed;
+      document.getElementById('previewName').textContent = file.name;
+      document.getElementById('uploadZone').style.display = 'none';
+      document.querySelector('.camera-btns').style.display = 'none';
+      document.getElementById('previewWrap').classList.add('show');
+      checkReady();
+      hideError();
+    };
+    img.src = result;
   };
   reader.readAsDataURL(file);
 }
 
 function resetUpload() {
-  imageBase64 = null;
-  imageType = null;
+  imageBase64 = null; imageType = null;
   document.getElementById('uploadZone').style.display = '';
+  document.querySelector('.camera-btns').style.display = '';
   document.getElementById('previewWrap').classList.remove('show');
   document.getElementById('fileInput').value = '';
-  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('cameraInput').value = '';
   document.getElementById('resultsBox').classList.remove('show');
+  document.getElementById('analyzeBtn').disabled = true;
   setStep(1);
 }
-
-document.getElementById('apiKey').addEventListener('input', checkReady);
 
 function checkReady() {
   const key = document.getElementById('apiKey').value.trim();
   document.getElementById('analyzeBtn').disabled = !(key && imageBase64);
-}
-
-function toggleKey() {
-  const inp = document.getElementById('apiKey');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
 function setStep(n) {
@@ -847,14 +729,11 @@ function setStep(n) {
 }
 
 function showError(msg) {
-  const box = document.getElementById('errorBox');
-  box.textContent = msg;
-  box.classList.add('show');
+  const b = document.getElementById('errorBox');
+  b.textContent = msg; b.classList.add('show');
 }
 
-function hideError() {
-  document.getElementById('errorBox').classList.remove('show');
-}
+function hideError() { document.getElementById('errorBox').classList.remove('show'); }
 
 async function analyze() {
   const key = document.getElementById('apiKey').value.trim();
@@ -866,68 +745,66 @@ async function analyze() {
   document.getElementById('loadingBox').classList.add('show');
   document.getElementById('resultsBox').classList.remove('show');
 
-  const today = new Date().toISOString().split('T')[0];
+  const year = new Date().getFullYear();
 
-  const prompt = `Tu es un assistant qui analyse des photos d'horaires de travail.
-
-Examine cette image et extrait TOUS les quarts de travail visibles.
+  const prompt = `Analyse cette image d'un horaire de travail et extrait TOUS les quarts de travail visibles.
 
 Pour chaque quart, retourne un objet JSON avec:
-- "title": nom du quart ou poste (ex: "Travail", "Shift", ou le nom du poste si visible)
-- "date": date au format YYYY-MM-DD (si l'année n'est pas visible, utilise ${new Date().getFullYear()})
+- "title": nom du quart ou du poste (ex: "Travail", "Quart du matin", ou le nom du poste si visible)
+- "date": date au format YYYY-MM-DD. Si l'année n'est pas visible, utilise ${year}. Si le mois n'est pas visible, utilise le mois actuel.
 - "startTime": heure de début au format HH:MM (24h)
 - "endTime": heure de fin au format HH:MM (24h)
 - "notes": informations supplémentaires si présentes (lieu, département, etc.), sinon chaîne vide
 
-Retourne UNIQUEMENT un objet JSON valide avec la structure:
-{
-  "events": [ ... ]
-}
+Retourne UNIQUEMENT un JSON valide:
+{"events": [...]}
 
-Sans aucun texte avant ou après. Si aucun quart n'est détecté, retourne {"events": []}.`;
+Sans texte avant ou après, sans balises markdown. Si aucun quart détecté: {"events": []}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: imageType, data: imageBase64 } },
-            { type: 'text', text: prompt }
-          ]
-        }]
-      })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: imageType, data: imageBase64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 2000 }
+        })
+      }
+    );
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error?.message || `Erreur API: ${res.status}`);
+      const msg = err.error?.message || `Erreur API: ${res.status}`;
+      if (res.status === 400 && msg.includes('API_KEY')) throw new Error("Clé API invalide. Vérifie ta clé Gemini.");
+      throw new Error(msg);
     }
 
     const data = await res.json();
-    const raw = data.content[0].text.trim();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch { throw new Error("L'IA n'a pas pu lire l'horaire. Essaie avec une image plus nette."); }
+
     events = parsed.events || [];
 
     if (events.length === 0) {
-      showError("Aucun quart de travail détecté dans cette image. Essaie avec une image plus claire.");
+      showError("Aucun quart détecté. Assure-toi que l'image est claire et contient un horaire.");
       document.getElementById('analyzeBtn').disabled = false;
       setStep(1);
     } else {
       renderEvents();
       setStep(3);
     }
-  } catch (e) {
+  } catch(e) {
     showError("Erreur : " + e.message);
     document.getElementById('analyzeBtn').disabled = false;
     setStep(1);
@@ -939,52 +816,62 @@ Sans aucun texte avant ou après. Si aucun quart n'est détecté, retourne {"eve
 function renderEvents() {
   const list = document.getElementById('eventList');
   list.innerHTML = '';
-
   events.forEach((ev, i) => {
     ev._selected = true;
+    const dateObj = new Date(ev.date + 'T12:00:00');
+    const dateStr = dateObj.toLocaleDateString('fr-CA', { weekday: 'long', month: 'long', day: 'numeric' });
 
     const item = document.createElement('div');
     item.className = 'event-item selected';
     item.id = 'ev-' + i;
-
-    const dateObj = new Date(ev.date + 'T12:00:00');
-    const dateStr = dateObj.toLocaleDateString('fr-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
     item.innerHTML = `
-      <div class="event-check">✓</div>
-      <div class="event-body">
-        <div class="event-title-row event-view">
-          <span class="event-name">${ev.title}</span>
-          <span class="event-date-badge">${dateStr}</span>
-        </div>
-        <div class="event-time event-view">
-          ⏰ <span>${ev.startTime}</span> → <span>${ev.endTime}</span>
-          ${ev.notes ? `&nbsp;·&nbsp; 📍 ${ev.notes}` : ''}
-        </div>
-        <div class="edit-row">
-          <input type="text" data-field="title" value="${ev.title}" placeholder="Titre">
-          <input type="date" data-field="date" value="${ev.date}">
-          <input type="time" data-field="startTime" value="${ev.startTime}">
-          <input type="time" data-field="endTime" value="${ev.endTime}">
-          <input type="text" data-field="notes" value="${ev.notes}" placeholder="Notes">
-          <button class="btn-save-edit" onclick="saveEdit(${i})">✓ Sauvegarder</button>
-        </div>
-        <div style="margin-top:8px; display:flex; gap:6px;">
-          <button class="btn-edit" onclick="toggleEdit(${i})">✎ Modifier</button>
+      <div class="event-top">
+        <div class="event-check" onclick="toggleSelect(${i})">✓</div>
+        <div class="event-info">
+          <div class="event-view">
+            <div class="event-name">${ev.title}</div>
+            <div class="event-date">${dateStr}</div>
+            <div class="event-time">⏰ <span>${ev.startTime}</span> → <span>${ev.endTime}</span></div>
+            ${ev.notes ? `<div class="event-notes">📍 ${ev.notes}</div>` : ''}
+          </div>
+          <div class="edit-form">
+            <div>
+              <label>Titre</label>
+              <input type="text" data-field="title" value="${ev.title}">
+            </div>
+            <div>
+              <label>Date</label>
+              <input type="date" data-field="date" value="${ev.date}">
+            </div>
+            <div class="edit-row-times">
+              <div>
+                <label>Début</label>
+                <input type="time" data-field="startTime" value="${ev.startTime}">
+              </div>
+              <div>
+                <label>Fin</label>
+                <input type="time" data-field="endTime" value="${ev.endTime}">
+              </div>
+            </div>
+            <div>
+              <label>Notes</label>
+              <input type="text" data-field="notes" value="${ev.notes || ''}" placeholder="Optionnel">
+            </div>
+            <div class="edit-actions">
+              <button class="btn-save" onclick="saveEdit(${i})">✓ Sauvegarder</button>
+              <button class="btn-cancel-edit" onclick="cancelEdit(${i})">Annuler</button>
+            </div>
+          </div>
         </div>
       </div>
+      <button class="btn-edit-trigger" onclick="toggleEdit(${i})">✎ Modifier</button>
     `;
-
-    item.querySelector('.event-check').addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleSelect(i);
-    });
-
     list.appendChild(item);
   });
 
   document.getElementById('countBadge').textContent = events.length + ' quart' + (events.length > 1 ? 's' : '');
   document.getElementById('resultsBox').classList.add('show');
+  document.getElementById('resultsBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function toggleSelect(i) {
@@ -996,8 +883,11 @@ function toggleSelect(i) {
 }
 
 function toggleEdit(i) {
-  const item = document.getElementById('ev-' + i);
-  item.classList.toggle('editing');
+  document.getElementById('ev-' + i).classList.toggle('editing');
+}
+
+function cancelEdit(i) {
+  document.getElementById('ev-' + i).classList.remove('editing');
 }
 
 function saveEdit(i) {
@@ -1009,58 +899,34 @@ function saveEdit(i) {
   renderEvents();
 }
 
-function getSelectedEvents() {
-  return events.filter(e => e._selected);
-}
+function getSelected() { return events.filter(e => e._selected); }
 
 function exportToGoogle() {
-  const selected = getSelectedEvents();
-  if (!selected.length) return showError("Sélectionne au moins un quart à exporter.");
+  const selected = getSelected();
+  if (!selected.length) return showError("Sélectionne au moins un quart.");
   hideError();
-
   selected.forEach((ev, i) => {
     setTimeout(() => {
-      const start = ev.date.replace(/-/g, '') + 'T' + ev.startTime.replace(':', '') + '00';
-      const end   = ev.date.replace(/-/g, '') + 'T' + ev.endTime.replace(':', '') + '00';
-      const title = encodeURIComponent(ev.title);
-      const details = encodeURIComponent(ev.notes || 'Exporté depuis Horaire → Google Calendar');
-      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+      const start = ev.date.replace(/-/g,'') + 'T' + ev.startTime.replace(':','') + '00';
+      const end   = ev.date.replace(/-/g,'') + 'T' + ev.endTime.replace(':','') + '00';
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title)}&dates=${start}/${end}&details=${encodeURIComponent(ev.notes || '')}`;
       window.open(url, '_blank');
-    }, i * 400);
+    }, i * 500);
   });
 }
 
 function downloadICS() {
-  const selected = getSelectedEvents();
-  if (!selected.length) return showError("Sélectionne au moins un quart à exporter.");
+  const selected = getSelected();
+  if (!selected.length) return showError("Sélectionne au moins un quart.");
   hideError();
-
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Horaire to Calendar//FR',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-  ];
-
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Horaire//FR','CALSCALE:GREGORIAN'];
   selected.forEach(ev => {
-    const start = ev.date.replace(/-/g, '') + 'T' + ev.startTime.replace(':', '') + '00';
-    const end   = ev.date.replace(/-/g, '') + 'T' + ev.endTime.replace(':', '') + '00';
+    const start = ev.date.replace(/-/g,'') + 'T' + ev.startTime.replace(':','') + '00';
+    const end   = ev.date.replace(/-/g,'') + 'T' + ev.endTime.replace(':','') + '00';
     const now   = new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
-    lines.push(
-      'BEGIN:VEVENT',
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
-      `SUMMARY:${ev.title}`,
-      `DESCRIPTION:${ev.notes || ''}`,
-      `DTSTAMP:${now}`,
-      `UID:${now}-${Math.random().toString(36).substr(2,9)}@horaire`,
-      'END:VEVENT'
-    );
+    lines.push('BEGIN:VEVENT',`DTSTART:${start}`,`DTEND:${end}`,`SUMMARY:${ev.title}`,`DESCRIPTION:${ev.notes||''}`,`DTSTAMP:${now}`,`UID:${now}-${Math.random().toString(36).substr(2,9)}@horaire`,'END:VEVENT');
   });
-
   lines.push('END:VCALENDAR');
-
   const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
